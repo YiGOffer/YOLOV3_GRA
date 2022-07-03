@@ -16,15 +16,12 @@ import time
 import random
 import numpy as np
 from PIL import Image
-from predict import close_ser, open_ser
 from yolo import YOLO
-
 import serial
 class Ui_Form(object):
     def setupUi(self, Form):
         # yolo对象创建
         self.yolo = YOLO()
-
         Form.setObjectName("Form")
         Form.resize(1420, 720)
         self.label_left = QtWidgets.QLabel(Form)
@@ -47,7 +44,7 @@ class Ui_Form(object):
         self.open_weight_path.setGeometry(QtCore.QRect(170, 30, 561, 20))
         self.open_weight_path.setObjectName("open_weight_path")
         #------ 权重文件默认参数设置-----#
-        self.open_weight_path.setText("D:/deeplearnITERM/yolo3-pytorch/logs/ep079-loss2.896-val_loss3.104.pth")
+        self.open_weight_path.setText("D:/deeplearnITERM/yolox-pytorch/logs/not_zip/ep100-loss2.684-val_loss2.612.pth")
         self.yolo._defaults["model_path"] = self.open_weight_path.text()
         #------ 权重文件默认参数设置-----#
         self.select_weith_pth_button = QtWidgets.QPushButton(self.groupBox)
@@ -191,6 +188,9 @@ class Ui_Form(object):
         self.timer_camera3 = QtCore.QTimer()#视频显示 
         # 摄像头对象创建
         self.cap = cv2.VideoCapture(0)
+        #FPS
+        self.fps = 0.0
+
         #定时器信号与槽的连接
         self.timer_camera1.timeout.connect(self.show_camera)
         self.timer_camera3.timeout.connect(self.show_video)
@@ -239,30 +239,34 @@ class Ui_Form(object):
         self.autoDisNum.setText(_translate("Form", "自动"))
         self.groupBox_3.setTitle(_translate("Form", "载入信息显示"))
         self.groupBox_4.setTitle(_translate("Form", "串口收发"))
-        
-    
+        #选择文件夹
+        self._translate = QtCore.QCoreApplication.translate
+
     def open_select_weight_click(self):
-        _translate = QtCore.QCoreApplication.translate
+        # _translate = QtCore.QCoreApplication.translate
         self.directory_weight = QFileDialog.getOpenFileName(None, "选择文件", "H:/")
         weight_path = self.directory_weight[0]
-        self.yolo._defaults["model_path"]=weight_path
-        self.open_weight_path.setText(_translate("Form", weight_path))
-       
+        if(self.directory_weight[0] != ""):
+            self.yolo._defaults["model_path"]=weight_path
+            self.open_weight_path.setText(self._translate("Form", weight_path))
+
 
     def open_select_classes_txt_click(self):
-        _translate = QtCore.QCoreApplication.translate
+        # _translate = QtCore.QCoreApplication.translate
         self.directory_classes = QFileDialog.getOpenFileName(None, "选择文件", "H:/")
-        classes_path = self.directory_classes[0]
-        self.yolo._defaults["classes_path"]=classes_path
-        self.open_classes_path.setText(_translate("Form", classes_path))
+        if(self.directory_classes[0] != ""):
+            classes_path = self.directory_classes[0]
+            self.yolo._defaults["classes_path"]=classes_path
+            self.open_classes_path.setText(self._translate("Form", classes_path))
        
         
-        
+
     def open_select_video_click(self):
-        _translate = QtCore.QCoreApplication.translate
+        # _translate = QtCore.QCoreApplication.translate
         self.directory1 = QFileDialog.getOpenFileName(None, "选择文件", "H:/")
-        self.video_path = self.directory1[0]
-        self.open_video_path.setText(_translate("Form", self.video_path))
+        if(self.directory1[0] != ""):
+            self.video_path = self.directory1[0]
+            self.open_video_path.setText(self._translate("Form", self.video_path))
 
     def button_open_videoPath_click(self):
         self.timer_camera1.stop()
@@ -307,6 +311,8 @@ class Ui_Form(object):
             self.open_camera_button.setText(u'打开摄像头')
 
     def show_video(self):   #左边显示视频画面
+        
+        # self.t1 = time.time()
         flag, self.image = self.cap.read()
         if not flag:
             raise ValueError("未能正确读取摄像头（视频），请注意是否正确安装摄像头（是否正确填写视频路径）。")
@@ -346,7 +352,10 @@ class Ui_Form(object):
             show = cv2.resize(self.image, (int(width * height_new / height), height_new))
 
         show = cv2.cvtColor(show, cv2.COLOR_BGR2RGB)
-
+        # #FPS绘制
+        # self.fps  = ( self.fps + (1./(time.time()-self.t1)) ) / 2
+        # print("originFps= %.2f"%(self.fps))
+        # show = cv2.putText(show, "fps= %.2f"%(self.fps), (0, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
         showImage = QtGui.QImage(show.data, show.shape[1], show.shape[0],3 * show.shape[1], QtGui.QImage.Format_RGB888)
 
@@ -354,6 +363,7 @@ class Ui_Form(object):
         self.label_left.setPixmap(QtGui.QPixmap.fromImage(showImage))
 
     def show_camera(self):  #左边显示摄像头画面
+        #self.t1 = time.time()
         flag, self.image = self.cap.read()
         if not flag:
             raise ValueError("未能正确读取摄像头（视频），请注意是否正确安装摄像头（是否正确填写视频路径）。")
@@ -393,7 +403,10 @@ class Ui_Form(object):
             show = cv2.resize(self.image, (int(width * height_new / height), height_new))
 
         show = cv2.cvtColor(show, cv2.COLOR_BGR2RGB)
-
+        # #FPS绘制
+        # self.fps  = ( self.fps + (1./(time.time()-self.t1)) ) / 2
+        # print("originFps= %.2f"%(self.fps))
+        # show = cv2.putText(show, "fps= %.2f"%(self.fps), (0, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
         showImage = QtGui.QImage(show.data, show.shape[1], show.shape[0],3 * show.shape[1], QtGui.QImage.Format_RGB888)
 
@@ -424,7 +437,7 @@ class Ui_Form(object):
             self.start_video_button.setText(u'打开视频')
             
     def show_Detected_camera(self):
-        
+        t2 = time.time()
         # 格式转变，BGRtoRGB
         frame = cv2.cvtColor(self.image,cv2.COLOR_BGR2RGB)
         # 转变成Image
@@ -455,8 +468,12 @@ class Ui_Form(object):
         else:
 
             frame = cv2.resize(frame, (int(width * height_new / height), height_new))
-
+        #FPS绘制
+        self.fps  = ( self.fps + (1./(time.time()-t2)) ) / 2
+        print("检测视频fps= %.2f"%(self.fps))
+        show = cv2.putText(frame, "fps= %.2f"%(self.fps), (0, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
         show = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
         showImage = QtGui.QImage(show.data, show.shape[1], show.shape[0],3 * show.shape[1], QtGui.QImage.Format_RGB888)
 
 
@@ -509,7 +526,7 @@ class Ui_Form(object):
     #打开串口
     def open_ser(self,port,baudrate,timeout):
         try:
-            self.ser = serial.Serial(port,baudrate,timeout)
+            self.ser = serial.Serial(port,baudrate)
             if(self.ser.isOpen()==True):
                 self.textEdit_Uart.append("串口打开成功")
         except Exception as exc:
@@ -526,16 +543,17 @@ class Ui_Form(object):
                     curDist = self.distEdit.text()
                 else: print('dist设置错误')
                 if   x == 1 and curDist < 200 :
-                    send_datas = bytes.fromhex('0001')
+                    send_datas=bytearray([0x01,0x0d,0x0a])
+                    strsend = time.strftime("%Y-%m-%d %H:%M:%S")+"已发送数据：1"
                 elif x == 0:
-                    send_datas = bytes.fromhex('0000')
+                    send_datas=bytearray([0x00,0x0d,0x0a])
+                    strsend = time.strftime("%Y-%m-%d %H:%M:%S")+"已发送数据：0"
                 else: print('参数输入0或1')
-
+                print(send_datas)
                 self.ser.write(send_datas)
                 #将byte转换为 int
-                pre_datas = int.from_bytes(send_datas, byteorder='big', signed=False)
-                
-                strsend = time.strftime("%Y-%m-%d %H:%M:%S")+"已发送数据：" + str(pre_datas)
+                # pre_datas = int.from_bytes(send_datas, byteorder='big', signed=False)
+                # strsend = time.strftime("%Y-%m-%d %H:%M:%S")+"已发送数据：" + str(pre_datas)
                 self.textEdit_Uart.append(strsend)
             except Exception as exc:
                 self.textEdit_Uart.append("发送异常")
