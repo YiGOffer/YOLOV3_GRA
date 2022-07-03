@@ -1,0 +1,11 @@
+VOCdevkit
+.idea
+MFyolo
+2007_train.txt
+2007_val.txt
+logs
+img
+myVideoSave
+yolo_weights.pth
+__pycache__
+map_out
